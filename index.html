@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guess the Number Challenge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Guess the Number Challenge</h1>
+    <p class="subtitle">I'm thinking of a number between <strong>1</strong> and <strong>100</strong>. Can you guess it?</p>
+
+    <div class="game-area">
+      <div class="stats">
+        <span class="stat">Attempts: <span id="attempt-count">0</span></span>
+        <span class="stat">Best: <span id="best-score">—</span></span>
+      </div>
+
+      <div class="input-group">
+        <input
+          type="number"
+          id="guess-input"
+          min="1"
+          max="100"
+          placeholder="Enter your guess..."
+          autocomplete="off"
+        />
+        <button id="guess-btn">Guess!</button>
+      </div>
+
+      <div id="message" class="message" aria-live="polite"></div>
+
+      <div class="hint-bar" id="hint-bar">
+        <div class="hint-fill" id="hint-fill"></div>
+      </div>
+      <p class="hint-label" id="hint-label"></p>
+
+      <button id="reset-btn" class="reset-btn" hidden>Play Again</button>
+    </div>
+
+    <ul id="history" class="history" aria-label="Guess history"></ul>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
