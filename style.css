@@ -1,0 +1,215 @@
+/* ── Reset & base ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0;
+  padding: 1rem;
+}
+
+/* ── Card ─────────────────────────────────────────────────────── */
+.container {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 2.5rem 2rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+h1 {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(90deg, #e94560, #0f3460, #53d8fb);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.subtitle {
+  text-align: center;
+  color: #a0a0b0;
+  font-size: 0.95rem;
+  margin-bottom: 1.8rem;
+}
+
+/* ── Stats row ────────────────────────────────────────────────── */
+.stats {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+
+.stat {
+  font-size: 0.9rem;
+  color: #a0a0b0;
+}
+
+.stat span {
+  color: #53d8fb;
+  font-weight: 700;
+}
+
+/* ── Input & button ───────────────────────────────────────────── */
+.input-group {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+input[type="number"] {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.07);
+  color: #e0e0e0;
+  font-size: 1.1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="number"]:focus {
+  border-color: #53d8fb;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+#guess-btn {
+  padding: 0.75rem 1.4rem;
+  background: linear-gradient(135deg, #e94560, #c23152);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+}
+
+#guess-btn:hover {
+  background: linear-gradient(135deg, #ff5a78, #e94560);
+  box-shadow: 0 6px 20px rgba(233, 69, 96, 0.6);
+}
+
+#guess-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Message ──────────────────────────────────────────────────── */
+.message {
+  min-height: 1.6rem;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  transition: color 0.3s;
+}
+
+.message.too-low  { color: #ffb347; }
+.message.too-high { color: #87ceeb; }
+.message.correct  { color: #5dfc8c; }
+.message.invalid  { color: #ff6b6b; }
+
+/* ── Hint bar ─────────────────────────────────────────────────── */
+.hint-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.hint-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #53d8fb, #e94560);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.hint-label {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #808090;
+  margin-bottom: 1rem;
+  min-height: 1.1rem;
+}
+
+/* ── Reset button ─────────────────────────────────────────────── */
+.reset-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #53d8fb, #3ab0d4);
+  color: #0f3460;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 15px rgba(83, 216, 251, 0.35);
+}
+
+.reset-btn:hover {
+  background: linear-gradient(135deg, #7ae3ff, #53d8fb);
+  box-shadow: 0 6px 20px rgba(83, 216, 251, 0.55);
+}
+
+/* ── Guess history ────────────────────────────────────────────── */
+.history {
+  list-style: none;
+  margin-top: 1.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: center;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.history li {
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.history li.low  { background: rgba(255, 179, 71, 0.2);  color: #ffb347; border: 1px solid rgba(255,179,71,0.4); }
+.history li.high { background: rgba(135, 206, 235, 0.2); color: #87ceeb; border: 1px solid rgba(135,206,235,0.4); }
+.history li.win  { background: rgba(93, 252, 140, 0.2);  color: #5dfc8c; border: 1px solid rgba(93,252,140,0.4); }
+
+/* ── Responsive tweaks ────────────────────────────────────────── */
+@media (max-width: 400px) {
+  h1 { font-size: 1.6rem; }
+  .container { padding: 1.8rem 1.2rem; }
+}
