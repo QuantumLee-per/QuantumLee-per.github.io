@@ -1,0 +1,548 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess The Number Challenge</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      color: #17203a;
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.42), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(0, 255, 200, 0.22), transparent 30%),
+        linear-gradient(140deg, #ff8fd8 0%, #8fcbff 45%, #4b7dff 100%);
+    }
+
+    .page-shell {
+      box-sizing: border-box;
+      max-width: 1180px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 28px 18px;
+      display: grid;
+      grid-template-columns: minmax(340px, 2fr) minmax(280px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .game-card,
+    .panel {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(64, 97, 255, 0.16);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px rgba(39, 52, 120, 0.18);
+    }
+
+    .game-card { padding: 30px; }
+    .sidebar { display: grid; gap: 20px; }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ff4fa3;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    h1, h2, h3 { margin-top: 0; letter-spacing: 0; }
+    h1 { margin-bottom: 10px; font-size: 42px; line-height: 1; }
+    h2 { font-size: 1.3rem; margin-bottom: 14px; }
+    h3 { margin-bottom: 10px; color: #31436f; }
+
+    .subtitle {
+      margin: 0 0 26px;
+      max-width: 58ch;
+      line-height: 1.5;
+      color: #48557b;
+    }
+
+    .demo-note {
+      margin: 0 0 20px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #33456f;
+      background: #edf3ff;
+      border: 1px solid rgba(73, 112, 255, 0.16);
+    }
+
+    .setup-grid, .status-grid { display: grid; gap: 14px; }
+    .setup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 20px; }
+    .status-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px; }
+
+    .control-group label,
+    .play-panel label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .input-row { display: flex; gap: 10px; }
+    input, select, button { font: inherit; }
+
+    input, select {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #b8c8ff;
+      background: #f8fbff;
+      color: #17203a;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      background: linear-gradient(135deg, #ff4fa3, #7a5cff);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); background: linear-gradient(135deg, #f13d95, #6548eb); }
+    button:disabled { opacity: 0.62; cursor: not-allowed; transform: none; }
+    button.secondary { background: linear-gradient(135deg, #16c7b7, #2e91ff); }
+    button.secondary:hover { background: linear-gradient(135deg, #0fb4a5, #227ce1); }
+
+    .status-pill, .hint-panel, .play-panel, .panel { padding: 18px; }
+
+    .status-pill {
+      background: linear-gradient(180deg, #ffffff, #edf3ff);
+      border-radius: 18px;
+      border: 1px solid rgba(73, 112, 255, 0.16);
+    }
+
+    .status-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5666a8;
+    }
+
+    .hint-panel, .play-panel {
+      background: rgba(245, 249, 255, 0.8);
+      border-radius: 20px;
+      margin-bottom: 18px;
+    }
+
+    .hint-title { margin: 0 0 8px; font-weight: 700; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .message { min-height: 28px; margin: 12px 0 10px; font-weight: 700; }
+    .history-line, .panel-copy { line-height: 1.6; color: #4a567a; }
+    .leaderboard-group + .leaderboard-group { margin-top: 18px; }
+    .leaderboard-table-wrap { overflow-x: auto; }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(73, 112, 255, 0.12);
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(73, 112, 255, 0.12);
+      font-size: 0.95rem;
+    }
+
+    .leaderboard-table th { background: #edf3ff; color: #33456f; }
+    .leaderboard-table tr:last-child td { border-bottom: none; }
+
+    .leaderboard-empty {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #ffffff;
+      color: #4a567a;
+      box-shadow: inset 0 0 0 1px rgba(73, 112, 255, 0.12);
+    }
+
+    @media (max-width: 930px) {
+      .page-shell { grid-template-columns: 1fr; }
+      .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell { padding: 16px 12px; }
+      .game-card, .panel { padding: 20px; }
+      .setup-grid, .status-grid { grid-template-columns: 1fr; }
+      .input-row, .button-row { flex-direction: column; }
+      h1 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <section class="game-card">
+      <p class="eyebrow">Guessing Game</p>
+      <h1>Guess The Number Challenge</h1>
+      <p class="subtitle">Pick a difficulty, choose your attempt style, and chase a leaderboard-worthy score.</p>
+      <p class="demo-note">Frontend demo mode: scores are stored in this browser only. Download the full version for Python and SQLite persistence.</p>
+
+      <div class="setup-grid">
+        <div class="control-group">
+          <label for="playerName">Player Name</label>
+          <div class="input-row">
+            <input type="text" id="playerName" maxlength="30" placeholder="Enter your name">
+            <button id="savePlayerButton" type="button">Save</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="difficultySelect">Difficulty</label>
+          <select id="difficultySelect">
+            <option value="easy">Easy: 1 to 50</option>
+            <option value="medium">Medium: 1 to 100</option>
+            <option value="hard">Hard: 1 to 250</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="attemptMode">Attempt Mode</label>
+          <select id="attemptMode">
+            <option value="limited">Limited attempts</option>
+            <option value="unlimited">Unlimited guesses</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="attemptCount">Chances</label>
+          <select id="attemptCount">
+            <option value="5">5 chances</option>
+            <option value="8">8 chances</option>
+            <option value="10" selected>10 chances</option>
+            <option value="12">12 chances</option>
+            <option value="15">15 chances</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="status-grid">
+        <article class="status-pill"><span class="status-label">Player</span><strong id="currentPlayer">Not set</strong></article>
+        <article class="status-pill"><span class="status-label">Range</span><strong id="rangeDisplay">1 - 100</strong></article>
+        <article class="status-pill"><span class="status-label">Attempts Left</span><strong id="attempts">10</strong></article>
+        <article class="status-pill"><span class="status-label">Score</span><strong id="scoreDisplay">0</strong></article>
+      </div>
+
+      <div class="hint-panel">
+        <p class="hint-title">Hint</p>
+        <p id="hintText">Use the hint button when you need a clue.</p>
+      </div>
+
+      <div class="play-panel">
+        <label for="guessInput">Enter Your Guess</label>
+        <input type="number" id="guessInput" placeholder="Type a number">
+        <div class="button-row">
+          <button id="guessButton" type="button">Guess</button>
+          <button id="hintButton" type="button" class="secondary">Get Hint</button>
+          <button id="resetButton" type="button" class="secondary">New Round</button>
+        </div>
+      </div>
+
+      <p class="message" id="message"></p>
+      <p class="history-line">Guesses This Round: <span id="guessHistory">None</span></p>
+    </section>
+
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Your Best Record</h2>
+        <div id="playerStats" class="panel-copy">Enter your player name to load saved demo results.</div>
+      </section>
+
+      <section class="panel">
+        <h2>Leaderboard</h2>
+        <div class="leaderboard-group"><h3>Easy</h3><div id="leaderboardEasy" class="leaderboard-table-wrap"></div></div>
+        <div class="leaderboard-group"><h3>Medium</h3><div id="leaderboardMedium" class="leaderboard-table-wrap"></div></div>
+        <div class="leaderboard-group"><h3>Hard</h3><div id="leaderboardHard" class="leaderboard-table-wrap"></div></div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    const difficultyConfig = {
+      easy: { label: "Easy", min: 1, max: 50, scoreMultiplier: 1 },
+      medium: { label: "Medium", min: 1, max: 100, scoreMultiplier: 2 },
+      hard: { label: "Hard", min: 1, max: 250, scoreMultiplier: 3 }
+    };
+
+    const storageKey = "guessNumberDemoHistory";
+    let currentPlayerName = "";
+    let currentScore = 0;
+    let currentGuesses = [];
+    let secretNumber = 0;
+    let attemptsLeft = 0;
+    let maxAttempts = 0;
+    let roundCompleted = false;
+    let hintUsed = false;
+    let selectedDifficulty = difficultyConfig.medium;
+    let attemptMode = "limited";
+    let currentRoundScore = 0;
+
+    const playerNameInput = document.getElementById("playerName");
+    const difficultySelect = document.getElementById("difficultySelect");
+    const attemptModeSelect = document.getElementById("attemptMode");
+    const attemptCountSelect = document.getElementById("attemptCount");
+    const guessInput = document.getElementById("guessInput");
+    const currentPlayerEl = document.getElementById("currentPlayer");
+    const rangeDisplayEl = document.getElementById("rangeDisplay");
+    const attemptsEl = document.getElementById("attempts");
+    const scoreDisplayEl = document.getElementById("scoreDisplay");
+    const hintTextEl = document.getElementById("hintText");
+    const messageEl = document.getElementById("message");
+    const guessHistoryEl = document.getElementById("guessHistory");
+    const playerStatsEl = document.getElementById("playerStats");
+    const leaderboardElements = {
+      easy: document.getElementById("leaderboardEasy"),
+      medium: document.getElementById("leaderboardMedium"),
+      hard: document.getElementById("leaderboardHard")
+    };
+    const guessButton = document.getElementById("guessButton");
+    const hintButton = document.getElementById("hintButton");
+
+    function setMessage(text, color = "#1f1d1c") {
+      messageEl.textContent = text;
+      messageEl.style.color = color;
+    }
+
+    function getHistory() {
+      return JSON.parse(localStorage.getItem(storageKey) || "[]");
+    }
+
+    function saveHistory(rows) {
+      localStorage.setItem(storageKey, JSON.stringify(rows));
+    }
+
+    function refreshModeControls() {
+      attemptMode = attemptModeSelect.value;
+      attemptCountSelect.disabled = attemptMode === "unlimited";
+    }
+
+    function getSelectedMaxAttempts() {
+      return attemptMode === "unlimited" ? Number.POSITIVE_INFINITY : Number(attemptCountSelect.value);
+    }
+
+    function updateCurrentPlayer(name) {
+      currentPlayerName = name.trim();
+      currentPlayerEl.textContent = currentPlayerName || "Not set";
+      if (currentPlayerName) {
+        localStorage.setItem("guessGamePlayerName", currentPlayerName);
+        loadPlayerStats(currentPlayerName);
+      } else {
+        localStorage.removeItem("guessGamePlayerName");
+        playerStatsEl.textContent = "Enter your player name to load saved demo results.";
+      }
+    }
+
+    function requirePlayerName() {
+      if (currentPlayerName) return true;
+      const typedName = playerNameInput.value.trim();
+      if (!typedName) {
+        setMessage("Enter your player name before starting the game.", "#9e2f24");
+        playerNameInput.focus();
+        return false;
+      }
+      updateCurrentPlayer(typedName);
+      return true;
+    }
+
+    function startGame() {
+      selectedDifficulty = difficultyConfig[difficultySelect.value];
+      refreshModeControls();
+      maxAttempts = getSelectedMaxAttempts();
+      attemptsLeft = maxAttempts;
+      currentGuesses = [];
+      roundCompleted = false;
+      hintUsed = false;
+      currentRoundScore = 0;
+      secretNumber = Math.floor(Math.random() * (selectedDifficulty.max - selectedDifficulty.min + 1)) + selectedDifficulty.min;
+      rangeDisplayEl.textContent = `${selectedDifficulty.min} - ${selectedDifficulty.max}`;
+      attemptsEl.textContent = Number.isFinite(attemptsLeft) ? attemptsLeft : "Unlimited";
+      hintTextEl.textContent = "Use the hint button when you need a clue.";
+      guessHistoryEl.textContent = "None";
+      guessInput.value = "";
+      guessInput.min = selectedDifficulty.min;
+      guessInput.max = selectedDifficulty.max;
+      guessInput.disabled = false;
+      guessButton.disabled = false;
+      hintButton.disabled = false;
+      setMessage(`New ${selectedDifficulty.label.toLowerCase()} round started.`);
+    }
+
+    function updateScore(points) {
+      currentScore += points;
+      currentRoundScore += points;
+      scoreDisplayEl.textContent = currentScore;
+    }
+
+    function getAttemptsUsed() {
+      return currentGuesses.length;
+    }
+
+    function getRoundScoreForOutcome(won) {
+      const hintPenalty = hintUsed ? -5 : 0;
+      if (!won) return hintPenalty - 10;
+      const bonusBase = selectedDifficulty.scoreMultiplier * 25;
+      const attemptBonus = Number.isFinite(maxAttempts) ? Math.max(attemptsLeft, 0) * 4 : Math.max(40 - getAttemptsUsed(), 5);
+      return hintPenalty + bonusBase + attemptBonus;
+    }
+
+    function finalizeRoundScore(won) {
+      const calculatedRoundScore = getRoundScoreForOutcome(won);
+      updateScore(calculatedRoundScore - currentRoundScore);
+    }
+
+    function createHint() {
+      const midpoint = Math.floor((selectedDifficulty.min + selectedDifficulty.max) / 2);
+      if (secretNumber === midpoint) return "The secret number sits exactly in the middle of the range.";
+      const parityHint = secretNumber % 2 === 0 ? "even" : "odd";
+      const sideHint = secretNumber > midpoint ? "upper half" : "lower half";
+      return `The number is ${parityHint} and it is in the ${sideHint} of the range.`;
+    }
+
+    function handleHint() {
+      if (roundCompleted) return;
+      if (hintUsed) {
+        setMessage("You already used the hint for this round.", "#7b5526");
+        return;
+      }
+      hintUsed = true;
+      hintTextEl.textContent = createHint();
+      setMessage("Hint revealed. A small score penalty was applied.", "#7b5526");
+      updateScore(-5);
+    }
+
+    function saveCompletedGame(won) {
+      const effectiveMaxAttempts = Number.isFinite(maxAttempts) ? maxAttempts : getAttemptsUsed();
+      const rows = getHistory();
+      rows.push({
+        player_name: currentPlayerName,
+        difficulty_level: difficultySelect.value,
+        game_score: currentRoundScore,
+        allowed_attempts: effectiveMaxAttempts,
+        guesses_count: getAttemptsUsed(),
+        won,
+        played_at: new Date().toISOString()
+      });
+      saveHistory(rows);
+    }
+
+    function finishRound(won) {
+      roundCompleted = true;
+      guessInput.disabled = true;
+      guessButton.disabled = true;
+      hintButton.disabled = true;
+      saveCompletedGame(won);
+      loadLeaderboard();
+      loadPlayerStats(currentPlayerName);
+    }
+
+    function checkGuess() {
+      if (!requirePlayerName() || roundCompleted) return;
+      const guess = Number(guessInput.value);
+      if (!guess || guess < selectedDifficulty.min || guess > selectedDifficulty.max) {
+        setMessage(`Enter a number from ${selectedDifficulty.min} to ${selectedDifficulty.max}.`, "#9e2f24");
+        return;
+      }
+      currentGuesses.push(guess);
+      guessHistoryEl.textContent = currentGuesses.join(", ");
+      if (Number.isFinite(attemptsLeft)) {
+        attemptsLeft -= 1;
+        attemptsEl.textContent = attemptsLeft;
+      } else {
+        attemptsEl.textContent = "Unlimited";
+      }
+      if (guess === secretNumber) {
+        finalizeRoundScore(true);
+        setMessage(`Correct! You found the number in ${getAttemptsUsed()} guesses.`, "#1f7a3a");
+        finishRound(true);
+        return;
+      }
+      setMessage(guess < secretNumber ? "Too low. Try a higher number." : "Too high. Try a lower number.");
+      if (Number.isFinite(attemptsLeft) && attemptsLeft <= 0) {
+        finalizeRoundScore(false);
+        setMessage(`Out of chances. The number was ${secretNumber}.`, "#9e2f24");
+        finishRound(false);
+        return;
+      }
+      guessInput.value = "";
+      guessInput.focus();
+    }
+
+    function loadLeaderboard() {
+      const rows = getHistory().filter((entry) => entry.won);
+      ["easy", "medium", "hard"].forEach((level) => {
+        const levelRows = rows
+          .filter((entry) => entry.difficulty_level === level)
+          .sort((a, b) => a.guesses_count - b.guesses_count || b.game_score - a.game_score || a.allowed_attempts - b.allowed_attempts)
+          .slice(0, 5);
+        renderLeaderboardTable(leaderboardElements[level], levelRows);
+      });
+    }
+
+    function renderLeaderboardTable(container, rows) {
+      if (!rows.length) {
+        container.innerHTML = '<p class="leaderboard-empty">No records yet.</p>';
+        return;
+      }
+      container.innerHTML = `
+        <table class="leaderboard-table">
+          <thead><tr><th>Name</th><th>Skill Level</th><th>Allowed Attempts</th><th>Guesses Count</th><th>Game Score</th></tr></thead>
+          <tbody>${rows.map((entry) => `<tr><td>${entry.player_name}</td><td>${entry.difficulty_level}</td><td>${entry.allowed_attempts}</td><td>${entry.guesses_count}</td><td>${entry.game_score}</td></tr>`).join("")}</tbody>
+        </table>`;
+    }
+
+    function loadPlayerStats(playerName) {
+      if (!playerName) return;
+      const rows = getHistory().filter((entry) => entry.player_name.toLowerCase() === playerName.toLowerCase());
+      if (!rows.length) {
+        playerStatsEl.textContent = "No saved demo games yet for this player.";
+        return;
+      }
+      const wins = rows.filter((entry) => entry.won);
+      const best = wins.length ? Math.min(...wins.map((entry) => entry.guesses_count)) : null;
+      const highScore = wins.length ? Math.max(...wins.map((entry) => entry.game_score)) : 0;
+      playerStatsEl.innerHTML = [`Games played: ${rows.length}<br>`, `Wins: ${wins.length}<br>`, `Best winning record: ${best ? `${best} guesses` : "No wins yet"}<br>`, `High score: ${highScore}`].join("");
+    }
+
+    function handleSavePlayer() {
+      updateCurrentPlayer(playerNameInput.value);
+      if (currentPlayerName) setMessage(`Player saved as ${currentPlayerName}.`);
+    }
+
+    document.getElementById("savePlayerButton").addEventListener("click", handleSavePlayer);
+    document.getElementById("guessButton").addEventListener("click", checkGuess);
+    document.getElementById("hintButton").addEventListener("click", handleHint);
+    document.getElementById("resetButton").addEventListener("click", startGame);
+    difficultySelect.addEventListener("change", startGame);
+    attemptModeSelect.addEventListener("change", startGame);
+    attemptCountSelect.addEventListener("change", startGame);
+    playerNameInput.addEventListener("keydown", (event) => { if (event.key === "Enter") handleSavePlayer(); });
+    guessInput.addEventListener("keydown", (event) => { if (event.key === "Enter") checkGuess(); });
+
+    function initializePage() {
+      refreshModeControls();
+      scoreDisplayEl.textContent = currentScore;
+      const savedPlayerName = localStorage.getItem("guessGamePlayerName");
+      if (savedPlayerName) {
+        playerNameInput.value = savedPlayerName;
+        updateCurrentPlayer(savedPlayerName);
+      }
+      startGame();
+      loadLeaderboard();
+    }
+
+    initializePage();
+  </script>
+</body>
+</html>
