@@ -1,0 +1,4 @@
+game/__pycache__/
+game/*.db
+game/*.log
+game/dist/guess-the-number-game/

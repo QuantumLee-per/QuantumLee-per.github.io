@@ -4,6 +4,7 @@ const difficultyConfig = {
   hard: { label: "Hard", min: 1, max: 250, scoreMultiplier: 3 }
 };
 
+const DEMO_HISTORY_KEY = "guessGameDemoHistoryV1";
 let currentPlayerName = "";
 let currentScore = 0;
 let currentGuesses = [];
@@ -15,6 +16,7 @@ let hintUsed = false;
 let selectedDifficulty = difficultyConfig.medium;
 let attemptMode = "limited";
 let currentRoundScore = 0;
+let backendAvailable = true;
 
 const playerNameInput = document.getElementById("playerName");
 const difficultySelect = document.getElementById("difficultySelect");
@@ -40,6 +42,68 @@ const hintButton = document.getElementById("hintButton");
 function setMessage(text, color = "#1f1d1c") {
   messageEl.textContent = text;
   messageEl.style.color = color;
+}
+
+function readDemoHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(DEMO_HISTORY_KEY) || "[]");
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeDemoHistory(rows) {
+  localStorage.setItem(DEMO_HISTORY_KEY, JSON.stringify(rows));
+}
+
+function buildDemoLeaderboard(rows) {
+  const output = { easy: [], medium: [], hard: [] };
+  ["easy", "medium", "hard"].forEach((level) => {
+    output[level] = rows
+      .filter((row) => row.won && row.difficulty_level === level)
+      .sort((a, b) => {
+        if (b.game_score !== a.game_score) {
+          return b.game_score - a.game_score;
+        }
+        if (a.guesses_count !== b.guesses_count) {
+          return a.guesses_count - b.guesses_count;
+        }
+        return a.player_name.localeCompare(b.player_name);
+      })
+      .slice(0, 5);
+  });
+  return output;
+}
+
+function buildDemoPlayerStats(playerName, rows) {
+  const playerRows = rows.filter((row) => row.player_name.toLowerCase() === playerName.toLowerCase());
+  const wins = playerRows.filter((row) => row.won);
+  const bestWin = wins.sort((a, b) => a.guesses_count - b.guesses_count)[0];
+  const lastPlayed = playerRows[playerRows.length - 1];
+
+  return {
+    games_played: playerRows.length,
+    total_wins: wins.length,
+    best_attempts: bestWin ? bestWin.guesses_count : null,
+    last_played: lastPlayed ? lastPlayed.played_at : "N/A"
+  };
+}
+
+async function apiFetch(url, options) {
+  if (!backendAvailable) {
+    throw new Error("Backend unavailable");
+  }
+
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+    return response;
+  } catch (error) {
+    backendAvailable = false;
+    return null;
+  }
 }
 
 function refreshModeControls() {
@@ -104,7 +168,12 @@ function startGame() {
   guessInput.disabled = false;
   guessButton.disabled = false;
   hintButton.disabled = false;
-  setMessage(`New ${selectedDifficulty.label.toLowerCase()} round started.`, "#1f1d1c");
+  setMessage(
+    backendAvailable
+      ? `New ${selectedDifficulty.label.toLowerCase()} round started.`
+      : `New ${selectedDifficulty.label.toLowerCase()} round started in demo mode.`,
+    "#1f1d1c"
+  );
 }
 
 function updateScore(points) {
@@ -181,15 +250,27 @@ async function saveCompletedGame(won) {
     won
   };
 
-  const response = await fetch("/api/games", {
+  const response = await apiFetch("/api/games", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    throw new Error("Unable to save game history.");
+  if (response) {
+    return;
   }
+
+  const rows = readDemoHistory();
+  rows.push({
+    player_name: payload.player_name,
+    difficulty_level: payload.difficulty_level,
+    allowed_attempts: payload.max_attempts,
+    guesses_count: payload.attempts_used,
+    game_score: payload.game_score,
+    won: payload.won,
+    played_at: new Date().toLocaleString()
+  });
+  writeDemoHistory(rows);
 }
 
 async function finishRound(won) {
@@ -252,21 +333,20 @@ async function checkGuess() {
 }
 
 async function loadLeaderboard() {
-  try {
-    const response = await fetch("/api/leaderboard");
-    if (!response.ok) {
-      throw new Error("Failed to load leaderboard.");
-    }
+  const response = await apiFetch("/api/leaderboard");
 
+  if (response) {
     const data = await response.json();
     ["easy", "medium", "hard"].forEach((level) => {
       renderLeaderboardTable(leaderboardElements[level], data[level] || []);
     });
-  } catch (error) {
-    ["easy", "medium", "hard"].forEach((level) => {
-      leaderboardElements[level].innerHTML = '<p class="leaderboard-empty">Leaderboard unavailable.</p>';
-    });
+    return;
   }
+
+  const demoData = buildDemoLeaderboard(readDemoHistory());
+  ["easy", "medium", "hard"].forEach((level) => {
+    renderLeaderboardTable(leaderboardElements[level], demoData[level] || []);
+  });
 }
 
 function renderLeaderboardTable(container, rows) {
@@ -275,7 +355,7 @@ function renderLeaderboardTable(container, rows) {
     return;
   }
 
-  const header = `
+  container.innerHTML = `
     <table class="leaderboard-table">
       <thead>
         <tr>
@@ -299,8 +379,6 @@ function renderLeaderboardTable(container, rows) {
       </tbody>
     </table>
   `;
-
-  container.innerHTML = header;
 }
 
 async function loadPlayerStats(playerName) {
@@ -308,12 +386,9 @@ async function loadPlayerStats(playerName) {
     return;
   }
 
-  try {
-    const response = await fetch(`/api/player-stats?name=${encodeURIComponent(playerName)}`);
-    if (!response.ok) {
-      throw new Error("Failed to load player stats.");
-    }
+  const response = await apiFetch(`/api/player-stats?name=${encodeURIComponent(playerName)}`);
 
+  if (response) {
     const data = await response.json();
     if (!data.games_played) {
       playerStatsEl.textContent = "No saved games yet for this player.";
@@ -326,15 +401,32 @@ async function loadPlayerStats(playerName) {
       `Best winning record: ${data.best_attempts ? `${data.best_attempts} guesses` : "No wins yet"}<br>`,
       `Last played: ${data.last_played}`
     ].join("");
-  } catch (error) {
-    playerStatsEl.textContent = "Player stats unavailable.";
+    return;
   }
+
+  const data = buildDemoPlayerStats(playerName, readDemoHistory());
+  if (!data.games_played) {
+    playerStatsEl.textContent = "No saved games yet for this player.";
+    return;
+  }
+
+  playerStatsEl.innerHTML = [
+    `Games played: ${data.games_played}<br>`,
+    `Wins: ${data.total_wins}<br>`,
+    `Best winning record: ${data.best_attempts ? `${data.best_attempts} guesses` : "No wins yet"}<br>`,
+    `Last played: ${data.last_played}`
+  ].join("");
 }
 
 function handleSavePlayer() {
   updateCurrentPlayer(playerNameInput.value);
   if (currentPlayerName) {
-    setMessage(`Player saved as ${currentPlayerName}.`, "#1f1d1c");
+    setMessage(
+      backendAvailable
+        ? `Player saved as ${currentPlayerName}.`
+        : `Player saved as ${currentPlayerName}. Demo mode is active.`,
+      "#1f1d1c"
+    );
   }
 }
 
